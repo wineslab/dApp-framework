@@ -1,3 +1,6 @@
 [submodule "dApp-openairinterface5g"]
 	path = dApp-openairinterface5g
 	url = https://github.com/wineslab/dApp-openairinterface5g
+[submodule "dApp-library"]
+	path = dApp-library
+	url = https://github.com/wineslab/dApp-library
