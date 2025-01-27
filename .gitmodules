@@ -1,0 +1,3 @@
+[submodule "dApp-openairinterface5g"]
+	path = dApp-openairinterface5g
+	url = https://github.com/wineslab/dApp-openairinterface5g
