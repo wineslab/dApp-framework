@@ -7,7 +7,7 @@ There are two main modules composing this frameworks:
 - A custom library in Python for dApps
 - A custom version of OAI (soon to be updated and hopefully merged with the original branch)
 
-For a more indepth description of what are the dApps, please refer to [this page](https://openrangym.com/ran-frameworks/dapps).
+For a more detailed description of what are the dApps, please refer to [our recent architecture paper](https://arxiv.org/pdf/2501.16502) and [this page](https://openrangym.com/ran-frameworks/dapps).
 
 ## Usage
 
