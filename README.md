@@ -21,7 +21,7 @@ For every configuration of the E3 interface, make sure that do_SRS flag is set t
 
 ### System configuration for OTA
 
-This part of the guide is inteded to be only if running with `--ota` **and** with UDS sockets
+This part of the guide is inteded to be only if running with `--ota` **and** with Unix Domain Sockets (UDSs).
 If we need the dApp to run in a different user than OAI (e.g., $USER vs root) we need to create a specific unix users group called `dapp` and we assign root and user to this group to enable shared UDS through a dedicated folder:
 
 ```bash
