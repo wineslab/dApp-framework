@@ -1,6 +1,6 @@
 # dApps: Enabling Real-Time AI-Based Open RAN Control
 
-In this repository we configure a 5G gNB powered by OpenAirInterface and a dApp for Spectrum Sharing.
+In this repository we configure an OpenAirInterface 5G gNB and a dApp for real-time RAN control. 
 
 There are two main modules composing this frameworks:
 
