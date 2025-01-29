@@ -51,6 +51,11 @@ mkdir logs
 If you use the dApp concept and/or the framework to develop your own dApps, please cite the following paper:
 
 ```text
-@ARTICLE{TDB
+@ARTICLE{lacava2025dApps,
+author={Andrea Lacava and Leonardo Bonati and Niloofar Mohamadi and Rajeev Gangula and Florian Kaltenberger and Pedram Johari and Salvatore D'Oro and Francesca Cuomo and Michele Polese and Tommaso Melodia},
+title: {dApps: Enabling Real-Time AI-Based Open RAN Control},
+url={https://arxiv.org/pdf/2501.16502},
+year={2025}
+}
  }
 ```
