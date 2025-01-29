@@ -11,7 +11,7 @@ For a more detailed description of what are the dApps, please refer to [our rece
 
 ## Usage
 
-A full tutorial about the dApps can be found [here](https://openrangym.com/tutorials/dapps-oai).
+A complete tutorial on dApps can be found [on the OpenRAN Gym website](https://openrangym.com/tutorials/dapps-oai).
 
 In this page we discuss the configuration parameters that can be use to perform experiments over the air (OTA)
 
