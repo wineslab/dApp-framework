@@ -57,5 +57,4 @@ title: {dApps: Enabling Real-Time AI-Based Open RAN Control},
 url={https://arxiv.org/pdf/2501.16502},
 year={2025}
 }
- }
 ```
