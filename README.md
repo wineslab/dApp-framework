@@ -7,13 +7,13 @@ There are two main modules composing this frameworks:
 - A custom library in Python for dApps
 - A custom version of OAI (soon to be updated and hopefully merged with the original branch)
 
-For a more detailed description of what are the dApps, please refer to [our recent architecture paper](https://arxiv.org/pdf/2501.16502) and [this page](https://openrangym.com/ran-frameworks/dapps).
+For a more detailed description of what are the dApps, please refer to [our recent architecture paper](https://arxiv.org/pdf/2501.16502) and [this page](https://openrangym.com/o-ran-frameworks/dapps).
 
 ## Usage
 
 A complete tutorial on dApps can be found [on the OpenRAN Gym website](https://openrangym.com/tutorials/dapps-oai).
 
-In this page we discuss the configuration parameters that can be use to perform experiments over the air (OTA)
+In this page we discuss the configuration parameters that can be use to perform experiments over the air (OTA).
 
 ### Configuration for OAI
 
@@ -52,9 +52,10 @@ If you use the dApp concept and/or the framework to develop your own dApps, plea
 
 ```text
 @ARTICLE{lacava2025dApps,
-author={Andrea Lacava and Leonardo Bonati and Niloofar Mohamadi and Rajeev Gangula and Florian Kaltenberger and Pedram Johari and Salvatore D'Oro and Francesca Cuomo and Michele Polese and Tommaso Melodia},
-title: {dApps: Enabling Real-Time AI-Based Open RAN Control},
-url={https://arxiv.org/pdf/2501.16502},
-year={2025}
+author = {Andrea Lacava and Leonardo Bonati and Niloofar Mohamadi and Rajeev Gangula and Florian Kaltenberger and Pedram Johari and Salvatore D'Oro and Francesca Cuomo and Michele Polese and Tommaso Melodia},
+title = {dApps: Enabling Real-Time AI-Based Open RAN Control},
+url = {https://arxiv.org/pdf/2501.16502},
+pages = {1-31},
+year = {2025}
 }
 ```
