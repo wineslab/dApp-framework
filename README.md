@@ -1,13 +1,13 @@
 # dApps: Enabling Real-Time AI-Based Open RAN Control
 
-In this repository we configure an OpenAirInterface 5G gNB and a dApp for real-time RAN control. 
+In this repository we configure an OpenAirInterface 5G gNB and a dApp for real-time RAN control.
 
 There are two main modules composing this frameworks:
 
 - A custom library in Python for dApps
 - A custom version of OAI (soon to be updated and hopefully merged with the original branch)
 
-For a more detailed description of what are the dApps, please refer to [our recent architecture paper](https://arxiv.org/pdf/2501.16502) and [this page](https://openrangym.com/o-ran-frameworks/dapps).
+For a more detailed description of what are the dApps, please refer to [our architectural paper](https://doi.org/10.1016/j.comnet.2025.111342) ([here for the archive version](https://arxiv.org/pdf/2501.16502)) and its [presentation page](https://openrangym.com/o-ran-frameworks/dapps).
 
 ## Usage
 
@@ -17,11 +17,13 @@ In this page we discuss the configuration parameters that can be use to perform 
 
 ### Configuration for OAI
 
-For every configuration of the E3 interface, make sure that do_SRS flag is set to 0.
+For every configuration of the E3 interface, ensure that the `do_SRS` flag is set to `0`.
 
-### System configuration for OTA
+If you are using a USRP radio, it is recommended to set 3/4 sampling by using the `-E` flag in both the OAI and dApp software. This flag should not be used for standard Radio Units (RUs).
 
-This part of the guide is inteded to be only if running with `--ota` **and** with Unix Domain Sockets (UDSs).
+### System configuration for IPC
+
+This part of the guide is inteded to be only if running with Unix Domain Sockets (UDSs).
 If we need the dApp to run in a different user than OAI (e.g., $USER vs root) we need to create a specific unix users group called `dapp` and we assign root and user to this group to enable shared UDS through a dedicated folder:
 
 ```bash
