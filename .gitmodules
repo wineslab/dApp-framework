@@ -4,3 +4,6 @@
 [submodule "dApp-library"]
 	path = dApp-library
 	url = https://github.com/wineslab/dApp-library
+[submodule "dApp-flexric"]
+	path = dApp-flexric
+	url = https://github.com/wineslab/dApp-flexric
