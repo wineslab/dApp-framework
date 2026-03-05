@@ -2,10 +2,12 @@
 
 In this repository we configure an OpenAirInterface 5G gNB and a dApp for real-time RAN control.
 
-There are two main modules composing this frameworks:
+There are four modules composing this frameworks:
 
-- A custom library in Python for dApps
-- A custom version of OAI (soon to be updated and hopefully merged with the original branch)
+- Python library for creating and deploying dApps
+- LibE3: A Vendor neutral library in C++ with C wrappers for the E3AP on the RAN side
+- A custom version of OAI with LibE3 and the E3SM-Spectrum for IQ sensing and PRB nulling
+- A custom version of FlexRIC to enable xApp-dApp synchronization through E2SM-DAPP 
 
 For a more detailed description of what are the dApps, please refer to [our architectural paper](https://doi.org/10.1016/j.comnet.2025.111342) ([here for the archive version](https://arxiv.org/pdf/2501.16502)) and its [presentation page](https://openrangym.com/o-ran-frameworks/dapps).
 
