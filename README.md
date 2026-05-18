@@ -1,4 +1,9 @@
-# dApps: Enabling Real-Time AI-Based Open RAN Control
+<div align="center">
+<h1>dApps: Enabling Real-Time AI-Based Open RAN Control</h1>
+
+[![ArXiv Link](https://img.shields.io/badge/arXiv-2501.16502-red?logo=arxiv)](https://arxiv.org/abs/2501.16502)
+
+</div>
 
 In this repository we configure an OpenAirInterface 5G gNB and a dApp for real-time RAN control.
 
