@@ -1,0 +1,88 @@
+name: Publish OAI dApp Docker Image
+
+# Builds the lightweight dApp image FROM the pre-built OAI base
+# (ghcr.io/wineslab/dapp-oai-base, built & pushed locally via docker/build-base.sh)
+# and pushes it to GHCR:
+#   - :latest          on every push to main
+#   - :<VERSION>        additionally, only when the VERSION file changed in the push
+#
+# Pushes to the public mirror arrive via the mirror's deploy key (not GITHUB_TOKEN),
+# so they trigger this workflow normally.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  push_to_registry:
+    name: Build and push dApp image to GHCR
+    # Only run on the public mirror (where the base image and packages live).
+    if: github.repository == 'wineslab/dApp-library'
+    runs-on: ubuntu-latest
+    steps:
+      # The base image is large; reclaim disk so the pull + dApp build fit on the hosted runner.
+      - name: Free up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed to diff VERSION across the push
+
+      - name: Determine version and whether VERSION changed
+        id: meta
+        run: |
+          version=$(cat VERSION | tr -d '[:space:]')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          changed=true  # default for manual/dispatch runs: also (re)publish the version tag
+          before="${{ github.event.before }}"
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "$before" ] \
+             && [ "$before" != "0000000000000000000000000000000000000000" ]; then
+            if git diff --name-only "$before" "${{ github.sha }}" | grep -qx "VERSION"; then
+              changed=true
+            else
+              changed=false
+            fi
+          fi
+          echo "version_changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$version  version_changed=$changed"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build dApp image
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/dapp-oai
+          VERSION: ${{ steps.meta.outputs.version }}
+          VERSION_CHANGED: ${{ steps.meta.outputs.version_changed }}
+        run: |
+          tags=(-t "$IMAGE:latest")
+          if [ "$VERSION_CHANGED" = "true" ]; then
+            tags+=(-t "$IMAGE:$VERSION")
+          fi
+          # GIT_REF_DAPP = the exact pushed commit, so :latest matches what was pushed.
+          docker build "${tags[@]}" \
+            --build-arg GIT_REF_DAPP=${{ github.sha }} \
+            -f docker/Dockerfile-oai-dapp docker/
+
+      - name: Push image tags
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/dapp-oai
+          VERSION: ${{ steps.meta.outputs.version }}
+          VERSION_CHANGED: ${{ steps.meta.outputs.version_changed }}
+        run: |
+          docker push "$IMAGE:latest"
+          if [ "$VERSION_CHANGED" = "true" ]; then
+            docker push "$IMAGE:$VERSION"
+          fi

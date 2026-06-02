@@ -1,0 +1,63 @@
+FROM ubuntu:24.04
+
+# This file has been successfully tested with uhd versions:
+  # 4.7.0.0 
+  # 4.8.0.0
+
+# These uhd versions are know to NOT work with this file:
+  # 4.3.0.0
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG UHD_VERSION=4.7.0.0
+ARG CMAKE_VERSION=3.22.0
+
+# Install dependencies and utils
+RUN apt-get update && apt-get install -y \
+    autoconf \
+    automake \
+    build-essential \
+    ccache \
+    cmake \
+    cpufrequtils \
+    doxygen \
+    ethtool \
+    g++ \
+    git \
+    inetutils-tools \
+    libboost-all-dev \
+    libncurses6 \
+    libncurses-dev \
+    libusb-1.0-0 \
+    libusb-1.0-0-dev \
+    libusb-dev \
+    python3-dev \
+    python3-mako \
+    python3-numpy \
+    python3-requests \
+    python3-scipy \
+    python3-setuptools \
+    python3-ruamel.yaml \
+    wget \
+    vim \
+    nano \
+  # get a specific cmake version
+  && apt-get remove -y --purge cmake \
+  && cd /opt/ \
+  && wget -nv --progress=bar https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz \
+  && tar -xf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz \
+  && rm -Rf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz \
+  && ln -s /opt/cmake-${CMAKE_VERSION}-linux-x86_64/bin/* /usr/local/bin \
+  && ldconfig \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root/
+RUN git clone https://github.com/EttusResearch/uhd.git \
+  && cd uhd/ \
+  && git checkout v${UHD_VERSION} \
+  && cd host/ \
+  && mkdir build \
+  && cd build/ \
+  && cmake .. \
+  && make -j$(nproc) \
+  && make install \
+  && ldconfig

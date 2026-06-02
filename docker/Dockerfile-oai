@@ -1,0 +1,35 @@
+# =============================================================================
+# OAI image: the OAI gNB + nrUE build (E3 dApp agent + E2 xApp agent), on top of
+# the dependencies image. This is the RAN "base" the dApp image builds FROM.
+#
+# Layer chain:  ubuntu -> uhd:4.7 -> dapp-oai-deps -> dapp-oai-base -> dapp-oai
+# Built locally and pushed via docker/build-base.sh (not in CI).
+# =============================================================================
+
+ARG DEPS_IMAGE=ghcr.io/wineslab/dapp-oai-deps:latest
+FROM ${DEPS_IMAGE}
+
+WORKDIR /root/radio_code/
+
+# building OAI gNB + nrUE with E3 (dApp) and E2 (xApp) agents, RF simulator target.
+#
+# FlexRIC: the dApp service models (src/sm/dapp_sm) live on the tip of dApp-flexric's `main`
+# branch, NOT on the commit recorded in the OAI superproject (which points at Eurecom GitLab and
+# lacks dapp_sm). So we clone that branch directly into the submodule path, mirroring
+# spear-utils/change_flexric_submodule.sh --public. FlexRIC is OAI's only submodule.
+RUN git clone https://github.com/wineslab/dApp-openairinterface5g.git ./openairinterface5g \
+  && cd ./openairinterface5g \
+  && rm -rf openair2/E2AP/flexric \
+  && git clone --branch main https://github.com/wineslab/dApp-flexric.git openair2/E2AP/flexric \
+  && git -C openair2/E2AP/flexric submodule update --init --recursive \
+  && cd cmake_targets/ \
+  && ./build_oai -I \
+  && ./build_oai -w SIMU --ninja --gNB --nrUE --build-e3 --build-e2 \
+  && ldconfig
+
+# OpenShift runs containers with an arbitrary UID in the root (0) group. Make HOME accessible
+# and the logs dir group-writable WITHOUT recursing the multi-GB OAI tree (which would be slow
+# and would duplicate the whole tree into a new image layer). Binaries/source stay world-readable.
+RUN mkdir -p /logs \
+  && chmod g=u /root \
+  && chgrp -R 0 /logs && chmod -R g=u /logs

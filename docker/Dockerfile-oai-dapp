@@ -1,0 +1,31 @@
+# =============================================================================
+# OAI dApp image (final, runnable): the dApp library installed on top of the
+# pre-built OAI/UHD/libe3 base (docker/Dockerfile-oai-base).
+#
+# This is the FAST, per-push layer built in CI (.github/workflows/publish-docker-image.yml):
+# it only clones + installs the dApp on top of the slow-changing base.
+# =============================================================================
+
+ARG BASE_IMAGE=ghcr.io/wineslab/dapp-oai-base:latest
+FROM ${BASE_IMAGE}
+
+# Which dApp revision to install: a branch, tag, or commit SHA.
+# CI passes the pushed commit SHA so :latest always matches exactly what was pushed.
+ARG GIT_REF_DAPP=main
+
+WORKDIR /root/radio_code/
+
+# installing the dApp library at the requested revision
+RUN git clone https://github.com/wineslab/dApp-library.git ./dApp \
+  && cd ./dApp \
+  && git checkout ${GIT_REF_DAPP} \
+  && hatch build \
+  && pip install --no-cache-dir "dist/"*.tar.gz"[all]"
+
+# Keep the dApp tree usable under OpenShift's arbitrary UID (root group).
+RUN chgrp -R 0 /root/radio_code/dApp /logs && chmod -R g=u /root/radio_code/dApp /logs
+
+# tini reaps zombies and forwards SIGTERM so the pod terminates promptly; the container stays
+# idle by default (does NOT auto-launch the gNB/dApp).
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["sleep", "infinity"]

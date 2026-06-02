@@ -2,6 +2,7 @@
 <h1>dApps: Enabling Real-Time AI-Based Open RAN Control</h1>
 
 [![ArXiv Link](https://img.shields.io/badge/arXiv-2501.16502-red?logo=arxiv)](https://arxiv.org/abs/2501.16502)
+[![Computer Networks](https://img.shields.io/badge/Computer%20Networks-10.1016%2Fj.comnet.2025.111342-orange?logo=elsevier)](https://doi.org/10.1016/j.comnet.2025.111342)
 
 </div>
 
@@ -20,42 +21,10 @@ For a more detailed description of what are the dApps, please refer to [our arch
 
 A complete tutorial on dApps can be found [on the OpenRAN Gym website](https://openrangym.com/tutorials/dapps-oai).
 
-In this page we discuss the configuration parameters that can be use to perform experiments over the air (OTA).
+Configuration and setup guides live in [`docs/`](docs/):
 
-### Configuration for OAI
-
-For every configuration of the E3 interface, ensure that the `do_SRS` flag is set to `0`.
-
-If you are using a USRP radio, it is recommended to set 3/4 sampling by using the `-E` flag in both the OAI and dApp software. This flag should not be used for standard Radio Units (RUs).
-
-### System configuration for IPC
-
-This part of the guide is inteded to be only if running with Unix Domain Sockets (UDSs).
-If we need the dApp to run in a different user than OAI (e.g., $USER vs root) we need to create a specific unix users group called `dapp` and we assign root and user to this group to enable shared UDS through a dedicated folder:
-
-```bash
-sudo groupadd dapp
-sudo usermod -aG dapp root
-sudo usermod -aG dapp $USER
-
-# check the groups
-groups root $USER
-```
-
-Folder creation (path is not important, but it should be the same in OAI and the dApp)
-
-```bash
-mkdir -p /tmp/dapps
-sudo chown :dapp /tmp/dapps
-sudo chmod g+ws /tmp/dapps
-```
-
-If the dApp is not run from the root user, a new folder should be included called `logs`
-
-```bash
-# In the root of your project
-mkdir logs
-```
+- [Documentation index & tutorial](docs/README.md) — including the over-the-air (OTA) OAI configuration notes.
+- [System configuration for IPC](docs/ipc-setup.md) — Unix Domain Socket (UDS) group and folder setup.
 
 If you use the dApp concept and/or the framework to develop your own dApps, please cite the following paper:
 

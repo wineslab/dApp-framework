@@ -1,0 +1,108 @@
+# =============================================================================
+# DEPENDENCIES image: everything OAI needs to build, on top of the UHD base.
+#
+# System/build toolchain (apt deps, CMake, Python venv, gcc-13, swig) plus libe3
+# (OAI's E3AP build dependency). No OAI or dApp source here.
+#
+# Layer chain:  ubuntu -> uhd:4.7 -> dapp-oai-deps -> dapp-oai-base -> dapp-oai
+# Built locally and pushed via docker/build-base.sh (not in CI).
+# =============================================================================
+
+# UHD base built locally from docker/Dockerfile-uhd-ubuntu24 (tag: uhd:4.7)
+FROM uhd:4.7
+
+# we need this to automatically configure timezone data
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/New_York
+
+ENV PATH="/opt/asn1c/bin:${PATH}"
+
+WORKDIR /root/radio_code/
+
+# install dependencies
+RUN apt-get update && apt-get install -y \
+    libsctp-dev \
+    libconfig-dev \
+    libboost-all-dev \
+    libusb-1.0-0-dev \
+    software-properties-common \
+    git \
+    vim \
+    psmisc \
+    curl \
+    python3-pip \
+    net-tools \
+    nano \
+    ninja-build \
+    sudo \
+    tini \
+    libjson-c-dev \
+    libsqlite3-dev \
+    libzmq3-dev \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    libcurl4-openssl-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install latest CMake
+ARG CMAKE_VERSION=3.28.1
+RUN curl -fsSL -o cmake.tar.gz https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz \
+  && tar -xzf cmake.tar.gz \
+  && mv cmake-${CMAKE_VERSION}-linux-x86_64 /opt/cmake \
+  && update-alternatives --install /usr/bin/cmake cmake /opt/cmake/bin/cmake 100 \
+  && update-alternatives --install /usr/bin/ccmake ccmake /opt/cmake/bin/ccmake 100 \
+  && update-alternatives --install /usr/bin/cpack cpack /opt/cmake/bin/cpack 100 \
+  && update-alternatives --install /usr/bin/ctest ctest /opt/cmake/bin/ctest 100 \
+  && rm cmake.tar.gz
+
+ENV PATH="/opt/cmake/bin:${PATH}"
+
+# Create isolated virtualenv to avoid PEP 668 and system conflicts
+RUN python3 -m venv /opt/venv \
+  && /opt/venv/bin/pip install --upgrade pip \
+  && /opt/venv/bin/pip install --no-cache-dir \
+    hatch \
+    build \
+    fastapi \
+    uvicorn \
+    pyzmq
+
+# Make venv the default Python/Pip (inherited by downstream images)
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /root/radio_code/
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y \
+  && apt-get update && apt-get install -y \
+    build-essential \
+    cmake-curses-gui \
+    libpcre2-dev \
+    automake \
+    autoconf \
+    libtool \
+    gcc-13 \
+    g++-13 \
+    cpp-13 \
+    bison \
+  && rm -rf /var/lib/apt/lists/* \
+  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13 \
+  && update-alternatives --config gcc \
+# install swig
+  && git clone -b release-4.1 https://github.com/swig/swig.git \
+  && cd swig/ \
+  && chmod +x autogen.sh \
+  && ./autogen.sh \
+  && ./configure --prefix=/usr/ \
+  && make -j$(nproc) \
+  && make install \
+  && ldconfig \
+  && rm -rf /root/.ssh /root/radio_code/swig
+
+# building and installing libe3 (OAI's E3AP build dependency: pkg_check_modules(CLIBE3 REQUIRED libe3))
+RUN git clone https://github.com/wineslab/dApp-libe3.git ./libe3 \
+  && cd ./libe3 \
+  && ./build_libe3 -I \
+  && ./build_libe3 --deb \
+  && dpkg -i build/libe3*.deb \
+  && ldconfig
