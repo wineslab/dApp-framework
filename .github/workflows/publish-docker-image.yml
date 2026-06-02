@@ -1,13 +1,12 @@
-name: Publish OAI dApp Docker Image
+name: dApp image build status (dry-run)
 
-# Builds the lightweight dApp image FROM the pre-built OAI base
-# (ghcr.io/wineslab/dapp-oai-base, built & pushed locally via docker/build-base.sh)
-# and pushes it to GHCR:
-#   - :latest          on every push to main
-#   - :<VERSION>        additionally, only when the VERSION file changed in the push
+# Reports what the dApp image build WOULD produce on each push to dApp-framework, WITHOUT building
+# or pushing anything yet. Keeps CI "in the loop" while the base-build story is settled.
 #
-# Pushes to the public mirror arrive via the mirror's deploy key (not GITHUB_TOKEN),
-# so they trigger this workflow normally.
+# The heavy base (UHD + deps + libe3 + OAI) is built locally via docker/build-base.sh and pushed to
+# ghcr.io/wineslab/dapp-oai-base (linked to this repo via the image's org.opencontainers.image.source
+# label). When ready to publish the dApp image, add docker login + build/push steps using the values
+# this job already computes (tags: :latest and :<dApp-library VERSION>).
 on:
   push:
     branches: [main]
@@ -15,74 +14,54 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-  push_to_registry:
-    name: Build and push dApp image to GHCR
-    # Only run on the public mirror (where the base image and packages live).
-    if: github.repository == 'wineslab/dApp-library'
+  report:
+    name: Report would-be dApp image build
+    if: github.repository == 'wineslab/dapp-framework'
     runs-on: ubuntu-latest
     steps:
-      # The base image is large; reclaim disk so the pull + dApp build fit on the hosted runner.
-      - name: Free up disk space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-
       - name: Check out the repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # needed to diff VERSION across the push
+          fetch-depth: 0  # needed to diff submodule pointers across the push
 
-      - name: Determine version and whether VERSION changed
-        id: meta
+      - name: Compute and report would-be build
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          version=$(cat VERSION | tr -d '[:space:]')
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          IMAGE="ghcr.io/${{ github.repository_owner }}/dapp-oai"
+          SUBS="dApp-openairinterface5g dApp-library dApp-flexric dApp-libe3"
+          FW_SHA="$(git rev-parse --short HEAD)"
 
-          changed=true  # default for manual/dispatch runs: also (re)publish the version tag
+          # Which submodule pointers changed in this push (n/a for manual dispatch / initial push).
           before="${{ github.event.before }}"
+          changed="(n/a — not a push diff)"
           if [ "${{ github.event_name }}" = "push" ] && [ -n "$before" ] \
              && [ "$before" != "0000000000000000000000000000000000000000" ]; then
-            if git diff --name-only "$before" "${{ github.sha }}" | grep -qx "VERSION"; then
-              changed=true
-            else
-              changed=false
-            fi
+            changed="$(git diff --name-only "$before" "${{ github.sha }}" -- $SUBS | tr '\n' ' ')"
+            [ -z "$changed" ] && changed="(none)"
           fi
-          echo "version_changed=$changed" >> "$GITHUB_OUTPUT"
-          echo "VERSION=$version  version_changed=$changed"
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # dApp-library VERSION at the pinned commit, without checking the submodule out.
+          dapp_sha="$(git rev-parse 'HEAD:dApp-library')"
+          version="$(gh api "repos/wineslab/dApp-library/contents/VERSION?ref=$dapp_sha" \
+                     --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | tr -d '[:space:]' || true)"
+          [ -z "$version" ] && version="unknown"
 
-      - name: Build dApp image
-        env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/dapp-oai
-          VERSION: ${{ steps.meta.outputs.version }}
-          VERSION_CHANGED: ${{ steps.meta.outputs.version_changed }}
-        run: |
-          tags=(-t "$IMAGE:latest")
-          if [ "$VERSION_CHANGED" = "true" ]; then
-            tags+=(-t "$IMAGE:$VERSION")
-          fi
-          # GIT_REF_DAPP = the exact pushed commit, so :latest matches what was pushed.
-          docker build "${tags[@]}" \
-            --build-arg GIT_REF_DAPP=${{ github.sha }} \
-            -f docker/Dockerfile-oai-dapp docker/
-
-      - name: Push image tags
-        env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/dapp-oai
-          VERSION: ${{ steps.meta.outputs.version }}
-          VERSION_CHANGED: ${{ steps.meta.outputs.version_changed }}
-        run: |
-          docker push "$IMAGE:latest"
-          if [ "$VERSION_CHANGED" = "true" ]; then
-            docker push "$IMAGE:$VERSION"
-          fi
+          {
+            echo "## dApp image — dry-run (no build / no push)"
+            echo ""
+            echo "| field | value |"
+            echo "|---|---|"
+            echo "| framework commit | \`$FW_SHA\` |"
+            echo "| changed submodules | $changed |"
+            echo "| dApp-library pinned | \`${dapp_sha:0:12}\` (VERSION \`$version\`) |"
+            echo "| would-be tags | \`$IMAGE:latest\`, \`$IMAGE:$version\` |"
+            echo ""
+            case " $changed " in
+              *dApp-openairinterface5g*|*dApp-flexric*|*dApp-libe3*)
+                echo "> :warning: A base-affecting submodule (OAI / FlexRIC / libe3) changed — rebuild the base locally with \`./docker/build-base.sh\` before publishing." ;;
+            esac
+          } | tee -a "$GITHUB_STEP_SUMMARY"

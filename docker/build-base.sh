@@ -36,6 +36,16 @@ PUSH="${PUSH:-1}"
 # docker/ directory holding the Dockerfiles (also used as build context)
 DOCKER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Framework root (parent of docker/). Pin each component to the commit recorded by its submodule,
+# so the base is reproducible from the dApp-framework checkout. Falls back to `main` if the
+# submodule isn't present (e.g. running this script outside the framework). Overridable via env.
+REPO_ROOT="$(cd "${DOCKER_DIR}/.." && pwd)"
+read_pin() { git -C "${REPO_ROOT}/$1" rev-parse HEAD 2>/dev/null || true; }
+LIBE3_REF="${LIBE3_REF:-$(read_pin dApp-libe3)}";              LIBE3_REF="${LIBE3_REF:-main}"
+OAI_REF="${OAI_REF:-$(read_pin dApp-openairinterface5g)}";     OAI_REF="${OAI_REF:-main}"
+FLEXRIC_REF="${FLEXRIC_REF:-$(read_pin dApp-flexric)}";        FLEXRIC_REF="${FLEXRIC_REF:-main}"
+echo ">> Pinned refs:  libe3=${LIBE3_REF}  oai=${OAI_REF}  flexric=${FLEXRIC_REF}"
+
 build_tags() {
   # echoes "-t repo:latest [-t repo:EXTRA_TAG]"
   local repo="$1"
@@ -61,12 +71,16 @@ docker build -f "${DOCKER_DIR}/Dockerfile-uhd-ubuntu24" \
 
 echo ">> [2/3] dependencies image (${DEPS_REPO}) from Dockerfile-deps"
 # shellcheck disable=SC2046
-docker build $(build_tags "${DEPS_REPO}") -f "${DOCKER_DIR}/Dockerfile-deps" "${DOCKER_DIR}"
+docker build $(build_tags "${DEPS_REPO}") \
+  --build-arg LIBE3_REF="${LIBE3_REF}" \
+  -f "${DOCKER_DIR}/Dockerfile-deps" "${DOCKER_DIR}"
 
 echo ">> [3/3] OAI base image (${BASE_REPO}) from Dockerfile-oai"
 # shellcheck disable=SC2046
 docker build $(build_tags "${BASE_REPO}") \
   --build-arg DEPS_IMAGE="${DEPS_REPO}:latest" \
+  --build-arg OAI_REF="${OAI_REF}" \
+  --build-arg FLEXRIC_REF="${FLEXRIC_REF}" \
   -f "${DOCKER_DIR}/Dockerfile-oai" "${DOCKER_DIR}"
 
 if [[ "${PUSH}" == "1" ]]; then
