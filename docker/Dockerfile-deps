@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
     sudo \
     tini \
     libjson-c-dev \
+    nlohmann-json3-dev \
     libsqlite3-dev \
     libzmq3-dev \
     python3 \
@@ -64,7 +65,6 @@ ENV PATH="/opt/cmake/bin:${PATH}"
 RUN python3 -m venv /opt/venv \
   && /opt/venv/bin/pip install --upgrade pip \
   && /opt/venv/bin/pip install --no-cache-dir \
-    hatch \
     build \
     fastapi \
     uvicorn \
