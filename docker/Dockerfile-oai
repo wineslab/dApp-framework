@@ -31,9 +31,14 @@ RUN git clone https://github.com/wineslab/dApp-openairinterface5g.git ./openairi
   && git clone https://github.com/wineslab/dApp-flexric.git openair2/E2AP/flexric \
   && git -C openair2/E2AP/flexric checkout ${FLEXRIC_REF} \
   && git -C openair2/E2AP/flexric submodule update --init --recursive \
+  # OSC RIC compatibility: move the E2AP server port 36421 -> 36422 before building flexric.
+  && sed -i 's/36421/36422/g' openair2/E2AP/flexric/src/agent/e2_agent_api.c \
   && cd cmake_targets/ \
   && ./build_oai -I \
   && ./build_oai -w SIMU --ninja --gNB --nrUE --build-e3 --build-e2 \
+  # Install flexric's service-model .so plugins into /usr/local/lib/flexric/ (the sm_dir OAI expects);
+  # build_oai compiles them but never runs the install rules.
+  && cmake --install ran_build/build \
   && ldconfig
 
 # OpenShift runs containers with an arbitrary UID in the root (0) group. Make HOME accessible
