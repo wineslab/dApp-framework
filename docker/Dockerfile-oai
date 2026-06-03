@@ -35,10 +35,17 @@ RUN git clone https://github.com/wineslab/dApp-openairinterface5g.git ./openairi
   && sed -i 's/36421/36422/g' openair2/E2AP/flexric/src/agent/e2_agent_api.c \
   && cd cmake_targets/ \
   && ./build_oai -I \
-  && ./build_oai -w SIMU --ninja --gNB --nrUE --build-e3 --build-e2 \
-  # Install flexric's service-model .so plugins into /usr/local/lib/flexric/ (the sm_dir OAI expects);
-  # build_oai compiles them but never runs the install rules.
-  && cmake --install ran_build/build \
+  # Embedded E2 agent must match the service-model versions installed below (KPM v3 for OSC RIC / xDevSM).
+  && ./build_oai -w SIMU --ninja --gNB --nrUE --build-e3 --build-e2 --cmake-opt "-DKPM_VERSION=KPM_V3_00" \
+  # build_oai only links nr-softmodem/nr-uesoftmodem; the flexric SM plugins are dlopen()'d at runtime
+  # and never compiled by that build. Build+install FlexRIC standalone (xDevSM tutorial) so the SM .so
+  # land in /usr/local/lib/flexric/ (the sm_dir the agent loads from). gcc-13 is accepted by flexric.
+  # https://openrangym.com/tutorials/xdevsm-tutorial
+  && cd ../openair2/E2AP/flexric \
+  && mkdir -p build && cd build \
+  && cmake .. -DKPM_VERSION=KPM_V3_00 \
+  && make -j"$(nproc)" \
+  && make install \
   && ldconfig
 
 # OpenShift runs containers with an arbitrary UID in the root (0) group. Make HOME accessible

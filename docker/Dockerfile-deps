@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     python3-pip \
     net-tools \
+    iproute2 \
     nano \
     ninja-build \
     sudo \
