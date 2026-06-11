@@ -9,4 +9,4 @@
 	url = https://github.com/wineslab/dApp-flexric
 [submodule "dApp-libe3"]
 	path = dApp-libe3
-	url = https://github.com/wineslab/dApp-libe3
+	url = https://github.com/wineslab/libe3
