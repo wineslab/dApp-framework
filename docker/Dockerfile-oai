@@ -18,7 +18,7 @@ ARG FLEXRIC_REF=main
 
 WORKDIR /root/radio_code/
 
-# building OAI gNB + nrUE with E3 (dApp) and E2 (xApp) agents, RF simulator target.
+# building OAI gNB + nrUE with E3 (dApp) and E2 (xApp) agents, USRP + RF simulator targets.
 #
 # FlexRIC: the dApp service models (src/sm/dapp_sm) live in dApp-flexric, NOT on the commit recorded
 # inside the OAI repo (which points at Eurecom GitLab and lacks dapp_sm). So we clone dApp-flexric
@@ -36,7 +36,13 @@ RUN git clone https://github.com/wineslab/dApp-openairinterface5g.git ./openairi
   && cd cmake_targets/ \
   && ./build_oai -I \
   # Embedded E2 agent must match the service-model versions installed below (KPM v3 for OSC RIC / xDevSM).
-  && ./build_oai -w SIMU --ninja --gNB --nrUE --build-e3 --build-e2 --cmake-opt "-DKPM_VERSION=KPM_V3_00" \
+  # Build -w USRP so the softmodems link the USRP device driver (liboai_usrpdevif.so) — UHD 4.7 is already
+  # in the base (uhd:4.7 layer), so this adds no dependency, only re-targets the build. A second,
+  # incremental -w SIMU pass then adds the RF-simulator device (librfsimulator.so) WITHOUT relinking the
+  # softmodems, so a SINGLE image drives both real USRPs and rfsim (OAI selects the device at runtime:
+  # --rfsim -> simulator, otherwise USRP). One dapp-oai image thus serves the rfsim and usrp substrates.
+  && ./build_oai -w USRP --ninja --gNB --nrUE --build-e3 --build-e2 --cmake-opt "-DKPM_VERSION=KPM_V3_00" \
+  && ./build_oai -w SIMU --ninja \
   # build_oai only links nr-softmodem/nr-uesoftmodem; the flexric SM plugins are dlopen()'d at runtime
   # and never compiled by that build. Build+install FlexRIC standalone (xDevSM tutorial) so the SM .so
   # land in /usr/local/lib/flexric/ (the sm_dir the agent loads from). gcc-13 is accepted by flexric.
