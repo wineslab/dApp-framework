@@ -101,9 +101,9 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y \
   && rm -rf /root/.ssh /root/radio_code/swig
 
 # building and installing libe3 (OAI's E3AP build dependency: pkg_check_modules(CLIBE3 REQUIRED libe3))
-# LIBE3_REF pins the build to the dApp-libe3 commit recorded by the dApp-framework superproject.
+# LIBE3_REF pins the build to the libe3 commit recorded by the dApp-framework superproject.
 ARG LIBE3_REF=main
-RUN git clone https://github.com/wineslab/dApp-libe3.git ./libe3 \
+RUN git clone https://github.com/wineslab/libe3.git ./libe3 \
   && cd ./libe3 \
   && git checkout ${LIBE3_REF} \
   && ./build_libe3 -I \
